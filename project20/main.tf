@@ -172,7 +172,7 @@ resource "aws_lb" "load_balancer_asg" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.asg_instance_sg.name]
-  subnets            = ["aws_vpc.main_vpc.public_subnets"]
+  subnets            = ["aws_vpc.main_vpc.public_subnet_3cidrs"]
   #module.vpc.public_subnets
 }
 
