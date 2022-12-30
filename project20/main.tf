@@ -3,10 +3,10 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 4.45"
+      version = "~> 4.22"
     }
   }
-  required_version = ">= 1.2.1"
+  required_version = ">= 0.2.1"
 }
 
 provider "aws" {
@@ -94,7 +94,7 @@ resource "aws_route_table_association" "subnet_association" {
 # }
 
 resource "aws_security_group" "asg_instance_sg" {
-  name = "asg-instance-sg"
+  name        = "asg-instance-sg"
   description = "allow inbound traffic from ALB"
   vpc_id      = aws_vpc.main_vpc.id
   ingress {
@@ -110,11 +110,11 @@ resource "aws_security_group" "asg_instance_sg" {
     protocol        = "-1"
     security_groups = [aws_security_group.load_balancer_asg.id]
   }
-  
+
 }
 
 resource "aws_security_group" "load_balancer_asg" {
-  name = "load-balancer-asg"
+  name   = "load-balancer-asg"
   vpc_id = aws_vpc.main_vpc.id
   ingress {
     from_port   = 80
@@ -188,7 +188,7 @@ resource "aws_lb_target_group" "target_group_lb" {
   port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.main_vpc.id
-  
+
   health_check {
     port     = 80
     protocol = "HTTP"
