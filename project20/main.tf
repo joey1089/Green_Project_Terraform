@@ -30,13 +30,23 @@ resource "aws_vpc" "main_vpc" {
 
 # associate resource for public subnets
 resource "aws_subnet" "public_subnets" {
-  count             = length(var.public_subnet_3cidrs)
-  vpc_id            = aws_vpc.main_vpc.id
-  cidr_block        = element(var.public_subnet_3cidrs, count.index)
-  availability_zone = data.aws_availability_zones.available.names[count.index]
+  count                   = length(var.public_subnet_3cidrs)
+  vpc_id                  = aws_vpc.main_vpc.id
+  cidr_block              = element(var.public_subnet_3cidrs, count.index)
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
   map_public_ip_on_launch = true
   tags = {
     Name = "Public-Subnet ${count.index + 1}"
+  }
+}
+resource "aws_subnet" "private_subnets" {
+  count                   = length(var.public_subnet_3cidrs)
+  vpc_id                  = aws_vpc.main_vpc.id
+  cidr_block              = element(var.public_subnet_3cidrs, count.index)
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
+  map_public_ip_on_launch = true
+  tags = {
+    Name = "private-subnet ${count.index + 1}"
   }
 }
 
@@ -67,17 +77,17 @@ resource "aws_route_table_association" "subnet_association" {
   #subnet_id = aws_subnet.public_subnets.id
   route_table_id = aws_route_table.igw_route_table.id
 }
-resource "aws_security_group" "http_allow" {  
+resource "aws_security_group" "http_allow" {
   name        = "http_allow_sg"
   description = "allow inbound traffic from internet"
-  vpc_id      = aws_vpc.main_vpc.id  
+  vpc_id      = aws_vpc.main_vpc.id
 
   # Allow http incoming
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]    
+    cidr_blocks = ["0.0.0.0/0"]
   }
   # allow all out going - to access the internet
   egress {
@@ -92,17 +102,17 @@ resource "aws_security_group" "http_allow" {
 }
 
 #create security group to allow http,ssh inbound and allow all outgoing
-resource "aws_security_group" "http_ssh_allow" {  
+resource "aws_security_group" "http_ssh_allow" {
   name        = "http_ssh_allow_sg"
   description = "allow inbound traffic from internet"
-  vpc_id      = aws_vpc.main_vpc.id  
+  vpc_id      = aws_vpc.main_vpc.id
 
   # Allow http incoming
   ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    cidr_blocks     = ["0.0.0.0/0"]
     security_groups = [aws_security_group.http_allow.id]
   }
   # Allow ssh incoming

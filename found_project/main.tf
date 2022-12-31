@@ -19,3 +19,5 @@ resource "aws_default_vpc" "default" {
     Name = "Default VPC"
   }
 }
+
+#create subnet for each VPC
