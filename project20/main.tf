@@ -140,10 +140,10 @@ resource "aws_security_group" "load_balancer_asg" {
 
 # Create autoscale configuration
 resource "aws_launch_configuration" "asg-config" {
-  name_prefix = "asg-launch-config"
-  image_id        = "ami-0b5eea76982371e91"
-  instance_type   = "t2.micro"
-  user_data       = file("user-data.sh")
+  name_prefix   = "asg-launch-config"
+  image_id      = "ami-0b5eea76982371e91"
+  instance_type = "t2.micro"
+  user_data     = file("user-data.sh")
   #key_name = "aws_key_pair.localkeyname.key_name"
   security_groups = [aws_security_group.asg_instance_sg.id]
   lifecycle {
@@ -152,11 +152,11 @@ resource "aws_launch_configuration" "asg-config" {
 }
 # Create autoscale group 
 resource "aws_autoscaling_group" "autoscaling_group3" {
-  name = "project-autoscaling"
+  name                 = "project-autoscaling"
   min_size             = 3
   max_size             = 5
   desired_capacity     = 3
-  launch_configuration = aws_launch_configuration.asg-config.name #aws_launch_configuration.autoscaling_group3.name
+  launch_configuration = aws_launch_configuration.asg-config.name 
   #vpc_zone_identifier  = [aws_vpc.main_vpc]
   vpc_zone_identifier = data.aws_availability_zones.available.group_names
   #module.vpc.public_subnets
