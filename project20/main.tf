@@ -34,6 +34,7 @@ resource "aws_subnet" "public_subnets" {
   vpc_id            = aws_vpc.main_vpc.id
   cidr_block        = element(var.public_subnet_3cidrs, count.index)
   availability_zone = data.aws_availability_zones.available.names[count.index]
+  map_public_ip_on_launch = true
   tags = {
     Name = "Public-Subnet ${count.index + 1}"
   }
@@ -101,7 +102,7 @@ resource "aws_security_group" "http_ssh_allow" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["149.28.117.98/32"]
+    cidr_blocks = ["0.0.0.0/0"]
     security_groups = [aws_security_group.http_allow.id]
   }
   # Allow ssh incoming
@@ -109,7 +110,7 @@ resource "aws_security_group" "http_ssh_allow" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["149.28.117.98/32"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
   # allow all out going - to access the internet
   egress {
@@ -124,7 +125,7 @@ resource "aws_security_group" "http_ssh_allow" {
 }
 
 # Create ec2 instance with bootstraping user data
-resource "aws_instance" "ec2_instance_1" {
+resource "aws_instance" "ec2_instance" {
   count                  = length(var.public_subnet_3cidrs)
   ami                    = "ami-0b5eea76982371e91"
   instance_type          = "t2.micro"
@@ -134,7 +135,7 @@ resource "aws_instance" "ec2_instance_1" {
   user_data              = file("user-data.sh")
 
   tags = {
-    name = "ec2_instance_1"
+    name = "ec2_instances"
   }
 }
 
