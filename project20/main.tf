@@ -13,6 +13,13 @@ provider "aws" {
   region = "us-east-1"
 }
 data "aws_availability_zones" "available" {}
+# Need only for the foundational part
+# resource "aws_default_vpc" "default" {
+#   cidr_block = "10.10.0.0/16"
+#   tags = {
+#     Name = "Default VPC"
+#   }
+# }
 # main VPC block
 resource "aws_vpc" "main_vpc" {
   cidr_block = "10.10.0.0/16"
@@ -39,7 +46,6 @@ resource "aws_internet_gateway" "igw" {
   tags = {
     Name = "main-VPC-IGW"
   }
-
 }
 
 # create a route table for IGW association
@@ -60,12 +66,35 @@ resource "aws_route_table_association" "subnet_association" {
   #subnet_id = aws_subnet.public_subnets.id
   route_table_id = aws_route_table.igw_route_table.id
 }
+resource "aws_security_group" "http_allow" {  
+  name        = "http_allow_sg"
+  description = "allow inbound traffic from internet"
+  vpc_id      = aws_vpc.main_vpc.id  
+
+  # Allow http incoming
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]    
+  }
+  # allow all out going - to access the internet
+  egress {
+    from_port   = "0"
+    to_port     = "0"
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    name = "http_allow"
+  }
+}
 
 #create security group to allow http,ssh inbound and allow all outgoing
-resource "aws_security_group" "http_ssh_allow" {
+resource "aws_security_group" "http_ssh_allow" {  
   name        = "http_ssh_allow_sg"
-  description = "allow inbound traffic from ALB"
-  vpc_id      = aws_vpc.main_vpc.id
+  description = "allow inbound traffic from internet"
+  vpc_id      = aws_vpc.main_vpc.id  
 
   # Allow http incoming
   ingress {
@@ -73,6 +102,7 @@ resource "aws_security_group" "http_ssh_allow" {
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["149.28.117.98/32"]
+    security_groups = [aws_security_group.http_allow.id]
   }
   # Allow ssh incoming
   ingress {
@@ -88,7 +118,6 @@ resource "aws_security_group" "http_ssh_allow" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
   tags = {
     name = "http_ssh_allow_SG"
   }
@@ -96,11 +125,12 @@ resource "aws_security_group" "http_ssh_allow" {
 
 # Create ec2 instance with bootstraping user data
 resource "aws_instance" "ec2_instance_1" {
+  count                  = length(var.public_subnet_3cidrs)
   ami                    = "ami-0b5eea76982371e91"
   instance_type          = "t2.micro"
-  availability_zone      = "us-east-1a"
-  subnet_id              = aws_subnet.public_subnets[count.index]
-  vpc_security_group_ids = ["aws_security_group.http_ssh_allow_sg.id"]
+  availability_zone      = data.aws_availability_zones.available.names[count.index]
+  subnet_id              = element(aws_subnet.public_subnets[*].id, count.index)
+  vpc_security_group_ids = [aws_security_group.http_allow.id]
   user_data              = file("user-data.sh")
 
   tags = {
