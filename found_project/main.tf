@@ -143,7 +143,7 @@ resource "aws_security_group" "http_ssh_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  #Allow outgoing--access to web.
+  #Allow all outgoing
   egress {
     from_port   = 0
     to_port     = 0
