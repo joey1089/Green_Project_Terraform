@@ -1,4 +1,5 @@
-# Using default VPC 
+# Using default VPC
+# default VPC does not allow cider block - terraform destroy doesn't remove the default vpc
 # Terraform required provider block
 terraform {
   required_providers {
