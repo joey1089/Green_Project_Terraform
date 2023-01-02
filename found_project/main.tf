@@ -1,4 +1,5 @@
-# Using default VPC 
+# Using default VPC - 
+# hint - default VPC does not allow cider block - terraform destroy cmd doesn't remove the default vpc
 # Terraform required provider block
 terraform {
   required_providers {
@@ -116,21 +117,10 @@ resource "aws_route_table_association" "public_rt2" {
   route_table_id = aws_default_route_table.default_rt.id
 }
 
-# associate route table to the private subnet 1
-resource "aws_route_table_association" "private_rt1" {
-  subnet_id      = aws_default_subnet.private_subnet1.id
-  route_table_id = aws_default_route_table.default_rt.id
-}
-# associate route table to the private subnet 2
-resource "aws_route_table_association" "private_rt2" {
-  subnet_id      = aws_default_subnet.private_subnet2.id
-  route_table_id = aws_default_route_table.default_rt.id
-}
-
 # create security group allowing ssh and http 
 resource "aws_security_group" "http_ssh_sg" {
   name        = "http_ssh_sg"
-  description = "Enable HTTP and SSH access to ec2 instances"
+  description = "allow HTTP and SSH access only on ingress"
   vpc_id      =  aws_default_vpc.default.id
   ingress {
     from_port   = 22
@@ -162,17 +152,18 @@ resource "aws_security_group" "http_ssh_sg" {
 #   subnets            = [for subnet in aws_default_vpc.default.id : subnet.id]
 # }
 
-# resource "aws_instance" "ec2_instance" {
-#   # count                  = length(aws_default_subnet.public_subnet1.id, aws_default_subnet.public_subnet2.id)
-#   ami                    = "ami-0b5eea76982371e91"
-#   instance_type          = "t2.micro"
-#   availability_zone      = data.aws_availability_zones.available.names[count.index]
-#   subnet_id              = element(aws_subnet.public_subnets[*].id, count.index)
-#   vpc_security_group_ids = [aws_security_group]
-#   user_data              = file("user-data.sh")
+#Create ec2 inat
+resource "aws_instance" "ec2_instance" {
+  # count                  = length(aws_default_subnet.public_subnet1.id, aws_default_subnet.public_subnet2.id)
+  ami                    = "ami-0b5eea76982371e91"
+  instance_type          = "t2.micro"
+  availability_zone      = data.aws_availability_zones.available.names[count.index]
+  subnet_id              = element(aws_subnet.public_subnets[*].id, count.index)
+  vpc_security_group_ids = [aws_security_group]
+  user_data              = file("user-data.sh")
 
-#   tags = {
-#     name = "ec2_instances"
-#   }
-# }
+  tags = {
+    name = "ec2_instances"
+  }
+}
 
