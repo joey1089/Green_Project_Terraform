@@ -132,7 +132,7 @@ resource "aws_instance" "Instance_01" {
 
     echo '<!DOCTYPE html>' > /var/www/html/index.html
     echo '<html lang="en">' >> /var/www/html/index.html
-    echo '<head><title>Welcome to Green team - terraform deployment!</title></head>'  >> /var/www/html/index.html
+    echo '<head><title>Terraform Deployment Test</title></head>'  >> /var/www/html/index.html
     echo '<body style="background-color:rgb(109, 185, 109);">' >> /var/www/html/index.html
     echo '<h1 style="color:rgb(100, 27, 27);">This is test server.</h1>' >> /var/www/html/index.html
     EOF
@@ -153,7 +153,7 @@ resource "aws_instance" "Instance_02" {
 
     echo '<!DOCTYPE html>' > /var/www/html/index.html
     echo '<html lang="en">' >> /var/www/html/index.html
-    echo '<head><title>Welcome to Green team - terraform deployment!</title></head>'  >> /var/www/html/index.html
+    echo '<head><title>Terraform Deployment Test</title></head>'  >> /var/www/html/index.html
     echo '<body style="background-color:rgb(109, 185, 109);">' >> /var/www/html/index.html
     echo '<h1 style="color:rgb(100, 27, 27);">This is test server.</h1>' >> /var/www/html/index.html
     EOF
@@ -175,7 +175,7 @@ resource "aws_instance" "Instance_03" {
 
     echo '<!DOCTYPE html>' > /var/www/html/index.html
     echo '<html lang="en">' >> /var/www/html/index.html
-    echo '<head><title>Welcome to Green team - terraform deployment!</title></head>'  >> /var/www/html/index.html
+    echo '<head><title>Terraform Deployment Test</title></head>'  >> /var/www/html/index.html
     echo '<body style="background-color:rgb(109, 185, 109);">' >> /var/www/html/index.html
     echo '<h1 style="color:rgb(100, 27, 27);">This is test server.</h1>' >> /var/www/html/index.html
     EOF
