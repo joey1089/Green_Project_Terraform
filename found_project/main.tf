@@ -1,9 +1,11 @@
+# ----- foundational project - to learn and understand basics - so everything is hardcoded
+# ----- points to remember -> default VPC does not allow - cidr block
 # Terraform required provider block
 terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 4.22"
+      version = "~> 4.24"
     }
   }
   required_version = ">= 0.2.1"
@@ -13,135 +15,97 @@ provider "aws" {
   region = "us-east-1"
 }
 
-#create default VPC
-resource "aws_default_vpc" "default" {
+#Create Custom VPC
+resource "aws_vpc" "myvpc_vpc" {
+  cidr_block = "10.0.0.0/16"
   tags = {
-    Name = "Default VPC"
+    Name = "myvpc_vpc"
   }
 }
 
-#create subnet for each VPC
-# public subnet 1
-resource "aws_default_subnet" "public_subnet1" {
-
-
-  availability_zone = "us-east-1a"
-
+resource "aws_subnet" "subnet_east1a" {
+  vpc_id                  = aws_vpc.myvpc_vpc.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "us-east-1a"
+  map_public_ip_on_launch = true
   tags = {
-    name = "public_subnet1"
+    Name = "subnet-us-east-1a"
+  }
+}
+resource "aws_subnet" "subnet_east1b" {
+  vpc_id                  = aws_vpc.myvpc_vpc.id
+  cidr_block              = "10.0.2.0/24"
+  availability_zone       = "us-east-1b"
+  map_public_ip_on_launch = true
+  tags = {
+    Name = "subnet-us-east-1b"
+  }
+}
+resource "aws_subnet" "subnet_east1c" {
+  vpc_id                  = aws_vpc.myvpc_vpc.id
+  cidr_block              = "10.0.3.0/24"
+  availability_zone       = "us-east-1c"
+  map_public_ip_on_launch = true
+  tags = {
+    Name = "subnet-us-east-1c"
   }
 }
 
-# public subnet 2
-resource "aws_default_subnet" "public_subnet2" {
-
-
-  availability_zone = "us-east-1b"
-
-  tags = {
-    name = "public_subnet2"
-  }
-}
-# private subnet 1
-resource "aws_default_subnet" "private_subnet1" {
-
-
-  availability_zone = "us-east-1c"
-
-  tags = {
-    name = "private_subnet1"
-  }
-}
-# private subnet 2
-resource "aws_default_subnet" "private_subnet2" {
-
-  availability_zone = "us-east-1d"
-
-  tags = {
-    name = "private_subnet2"
-  }
-}
-# creating internet gateway 
+#Create internet gateway 
 resource "aws_internet_gateway" "igw" {
-
+  vpc_id = aws_vpc.myvpc_vpc.id
   tags = {
-    name = "igw"
+    Name = "igw"
   }
 }
 
-# creating route table
-# resource "aws_route_table" "rt" {
-#   vpc_id = aws_default_vpc.default.id
-#   route {    
-#     gateway_id = aws_internet_gateway.igw.id
-#   }
-
-#   # route {
-#   #   ipv6_cidr_block        = "::/0"
-#   #   egress_only_gateway_id = "aws_internet_gateway.igw"
-#   # }
-
-
-#   tags = {
-#     name = "rt"
-#   }
-# }
-resource "aws_default_route_table" "default_rt" {
-  default_route_table_id = aws_default_vpc.default.default_route_table_id
-  # aws_vpc.example.default_route_table_id
-
-  route = []
-
-  # route {
-  #   # cidr_block = "10.0.1.0/24"
-  #   gateway_id = "aws_internet_gateway.igw"
-  # }
-
-
+#Create a Route Table and add router with igw and allow all
+resource "aws_route_table" "igw_public_rt" {
+  vpc_id = aws_vpc.myvpc_vpc.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
   tags = {
-    Name = "default_rt"
+    Name = "Route Table"
   }
 }
 
-# associate route table to the public subnet 1
+#Create Route Table explicit assoication  with the public subnet
 resource "aws_route_table_association" "public_rt1" {
-  subnet_id      = aws_default_subnet.public_subnet1.id
-  route_table_id = aws_default_route_table.default_rt.id
+  subnet_id      = aws_subnet.subnet_east1a.id
+  route_table_id = aws_route_table.igw_public_rt.id
 }
-
-# associate route table to the public subnet 2
 resource "aws_route_table_association" "public_rt2" {
-  subnet_id      = aws_default_subnet.public_subnet2.id
-  route_table_id = aws_default_route_table.default_rt.id
+  subnet_id      = aws_subnet.subnet_east1b.id
+  route_table_id = aws_route_table.igw_public_rt.id
+}
+resource "aws_route_table_association" "public_rt3" {
+  subnet_id      = aws_subnet.subnet_east1c.id
+  route_table_id = aws_route_table.igw_public_rt.id
 }
 
-# associate route table to the private subnet 1
-resource "aws_route_table_association" "private_rt1" {
-  subnet_id      = aws_default_subnet.private_subnet1.id
-  route_table_id = aws_default_route_table.default_rt.id
-}
-# associate route table to the private subnet 2
-resource "aws_route_table_association" "private_rt2" {
-  subnet_id      = aws_default_subnet.private_subnet2.id
-  route_table_id = aws_default_route_table.default_rt.id
-}
-
-# create security group allowing ssh and http 
-resource "aws_security_group" "http_ssh_sg" {
+#Create securtiy group to allow http and ssh access
+resource "aws_security_group" "web_sg" {
   name        = "http_ssh_sg"
-  description = "Enable HTTP and SSH access to ec2 instances"
-  vpc_id      =  aws_default_vpc.default.id
+  description = "http and ssh allowed into ec2 instances"
+  vpc_id      = aws_vpc.myvpc_vpc.id
+  #Allow SSH access.
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"] 
+    #ip removed
   }
+
+  #Allow incoming HTTP
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+    #ip removed
   }
   #Allow outgoing--access to web.
   egress {
@@ -152,26 +116,67 @@ resource "aws_security_group" "http_ssh_sg" {
   }
 }
 
-# # create application load balancer - external
-# resource "aws_lb" "test" {
-#   name               = "test-lb-tf"
-#   internal           = false
-#   load_balancer_type = "application"
-#   security_groups    = [aws_security_group.lb_sg.id]
-#   subnets            = [for subnet in aws_default_vpc.default.id : subnet.id]
-# }
+# Create ec2_instance01 in AZ east-1a
+resource "aws_instance" "Instance_01" {
+  ami             = "ami-0b5eea76982371e91"
+  instance_type   = "t2.micro"
+  subnet_id       = aws_subnet.subnet_east1a.id
+  security_groups = [aws_security_group.web_sg.id]
 
-# resource "aws_instance" "ec2_instance" {
-#   # count                  = length(aws_default_subnet.public_subnet1.id, aws_default_subnet.public_subnet2.id)
-#   ami                    = "ami-0b5eea76982371e91"
-#   instance_type          = "t2.micro"
-#   availability_zone      = data.aws_availability_zones.available.names[count.index]
-#   subnet_id              = element(aws_subnet.public_subnets[*].id, count.index)
-#   vpc_security_group_ids = [aws_security_group]
-#   user_data              = file("user-data.sh")
+  user_data = <<-EOF
+    #!/bin/bash
+    yum -y update
+    yum -y install httpd
+    systemctl start httpd
+    systemctl enable httpd
 
-#   tags = {
-#     name = "ec2_instances"
-#   }
-# }
+    echo '<!DOCTYPE html>' > /var/www/html/index.html
+    echo '<html lang="en">' >> /var/www/html/index.html
+    echo '<head><title>Welcome to Green team - terraform deployment!</title></head>'  >> /var/www/html/index.html
+    echo '<body style="background-color:rgb(109, 185, 109);">' >> /var/www/html/index.html
+    echo '<h1 style="color:rgb(100, 27, 27);">This is test server.</h1>' >> /var/www/html/index.html
+    EOF
+}
+#Create ec2 instance02 in AZ east-1b
+resource "aws_instance" "Instance_02" {
+  ami             = "ami-0b5eea76982371e91"
+  instance_type   = "t2.micro"
+  subnet_id       = aws_subnet.subnet_east1b.id
+  security_groups = [aws_security_group.web_sg.id]
 
+  user_data = <<-EOF
+    #!/bin/bash
+    yum -y update
+    yum -y install httpd
+    systemctl start httpd
+    systemctl enable httpd
+
+    echo '<!DOCTYPE html>' > /var/www/html/index.html
+    echo '<html lang="en">' >> /var/www/html/index.html
+    echo '<head><title>Welcome to Green team - terraform deployment!</title></head>'  >> /var/www/html/index.html
+    echo '<body style="background-color:rgb(109, 185, 109);">' >> /var/www/html/index.html
+    echo '<h1 style="color:rgb(100, 27, 27);">This is test server.</h1>' >> /var/www/html/index.html
+    EOF
+}
+
+#Create ec2 instance03 in AZ east-1c
+resource "aws_instance" "Instance_03" {
+  ami             = "ami-0b5eea76982371e91"
+  instance_type   = "t2.micro"
+  subnet_id       = aws_subnet.subnet_east1c.id
+  security_groups = [aws_security_group.web_sg.id]
+
+  user_data = <<-EOF
+    #!/bin/bash
+    yum -y update
+    yum -y install httpd
+    systemctl start httpd
+    systemctl enable httpd
+
+    echo '<!DOCTYPE html>' > /var/www/html/index.html
+    echo '<html lang="en">' >> /var/www/html/index.html
+    echo '<head><title>Welcome to Green team - terraform deployment!</title></head>'  >> /var/www/html/index.html
+    echo '<body style="background-color:rgb(109, 185, 109);">' >> /var/www/html/index.html
+    echo '<h1 style="color:rgb(100, 27, 27);">This is test server.</h1>' >> /var/www/html/index.html
+    EOF
+}
