@@ -1,5 +1,6 @@
 # Using default VPC - 
-# hint - default VPC does not allow cider block - terraform destroy cmd doesn't remove the default vpc
+# hint - default VPC does not allow cider block - terraform destroy cmd doesn't remove the default vpc but 
+# removes security group if conflict arises
 # Terraform required provider block
 terraform {
   required_providers {
@@ -25,10 +26,7 @@ resource "aws_default_vpc" "default" {
 #create subnet for each VPC
 # public subnet 1
 resource "aws_default_subnet" "public_subnet1" {
-
-
   availability_zone = "us-east-1a"
-
   tags = {
     name = "public_subnet1"
   }
@@ -36,92 +34,59 @@ resource "aws_default_subnet" "public_subnet1" {
 
 # public subnet 2
 resource "aws_default_subnet" "public_subnet2" {
-
-
   availability_zone = "us-east-1b"
-
   tags = {
     name = "public_subnet2"
   }
 }
-# private subnet 1
-resource "aws_default_subnet" "private_subnet1" {
-
-
+# public subnet 3
+resource "aws_default_subnet" "public_subnet3" {
   availability_zone = "us-east-1c"
-
   tags = {
-    name = "private_subnet1"
+    name = "public-subnet3"
   }
 }
-# private subnet 2
-resource "aws_default_subnet" "private_subnet2" {
 
-  availability_zone = "us-east-1d"
-
-  tags = {
-    name = "private_subnet2"
-  }
-}
 # creating internet gateway 
 resource "aws_internet_gateway" "igw" {
-
+  vpc_id = aws_default_vpc.default.id
   tags = {
     name = "igw"
   }
 }
 
-# creating route table
-# resource "aws_route_table" "rt" {
-#   vpc_id = aws_default_vpc.default.id
-#   route {    
-#     gateway_id = aws_internet_gateway.igw.id
-#   }
-
-#   # route {
-#   #   ipv6_cidr_block        = "::/0"
-#   #   egress_only_gateway_id = "aws_internet_gateway.igw"
-#   # }
-
-
-#   tags = {
-#     name = "rt"
-#   }
-# }
-resource "aws_default_route_table" "default_rt" {
-  default_route_table_id = aws_default_vpc.default.default_route_table_id
-  # aws_vpc.example.default_route_table_id
-
-  route = []
-
-  # route {
-  #   # cidr_block = "10.0.1.0/24"
-  #   gateway_id = "aws_internet_gateway.igw"
-  # }
-
-
+resource "aws_route_table" "igw_public_rt" {
+  vpc_id = aws_default_vpc.default.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
   tags = {
-    Name = "default_rt"
+    Name = "Route Table"
   }
 }
-
 # associate route table to the public subnet 1
 resource "aws_route_table_association" "public_rt1" {
   subnet_id      = aws_default_subnet.public_subnet1.id
-  route_table_id = aws_default_route_table.default_rt.id
+  route_table_id = aws_route_table.igw_public_rt.id
 }
 
 # associate route table to the public subnet 2
 resource "aws_route_table_association" "public_rt2" {
   subnet_id      = aws_default_subnet.public_subnet2.id
-  route_table_id = aws_default_route_table.default_rt.id
+  route_table_id = aws_route_table.igw_public_rt.id
+}
+# associate route table to the public subnet 3
+resource "aws_route_table_association" "public_rt3" {
+  subnet_id      = aws_default_subnet.public_subnet3.id
+  route_table_id = aws_route_table.igw_public_rt.id
 }
 
 # create security group allowing ssh and http 
-resource "aws_security_group" "http_ssh_sg" {
+resource "aws_security_group" "web_sg" {
   name        = "http_ssh_sg"
   description = "allow HTTP and SSH access only on ingress"
-  vpc_id      =  aws_default_vpc.default.id
+  vpc_id      = aws_default_vpc.default.id
   ingress {
     from_port   = 22
     to_port     = 22
@@ -152,18 +117,42 @@ resource "aws_security_group" "http_ssh_sg" {
 #   subnets            = [for subnet in aws_default_vpc.default.id : subnet.id]
 # }
 
-#Create ec2 inat
-resource "aws_instance" "ec2_instance" {
-  # count                  = length(aws_default_subnet.public_subnet1.id, aws_default_subnet.public_subnet2.id)
-  ami                    = "ami-0b5eea76982371e91"
-  instance_type          = "t2.micro"
-  availability_zone      = data.aws_availability_zones.available.names[count.index]
-  subnet_id              = element(aws_subnet.public_subnets[*].id, count.index)
-  vpc_security_group_ids = [aws_security_group]
-  user_data              = file("user-data.sh")
-
+#Create ec2 instances_1
+resource "aws_instance" "ec2_instance_1" {
+  ami                = "ami-0b5eea76982371e91"
+  instance_type      = "t2.micro"
+  subnet_id          = aws_default_subnet.public_subnet1.id
+  # security_groups = [aws_security_group.http_allow_sg.id]
+  security_groups = [ aws_security_group.web_sg.id ]  
+  user_data          = file("user-data.sh")
   tags = {
-    name = "ec2_instances"
+    name = "ec2_instance_1"
   }
 }
+#Create ec2 instances_2
+resource "aws_instance" "ec2_instance_2" {
+  ami                = "ami-0b5eea76982371e91"
+  instance_type      = "t2.micro"
+  subnet_id          = aws_default_subnet.public_subnet1.id
+  # security_groups = [aws_security_group.http_allow_sg.id]
+  security_groups = [ aws_security_group.web_sg.id ]  
+  user_data          = file("user-data.sh")
+  tags = {
+    name = "ec2_instance_2"
+  }
+}
+
+#Create ec2 instances_3
+resource "aws_instance" "ec2_instance_3" {
+  ami                = "ami-0b5eea76982371e91"
+  instance_type      = "t2.micro"
+  subnet_id          = aws_default_subnet.public_subnet1.id
+  # security_groups = [aws_security_group.http_allow_sg.id]
+  security_groups = [ aws_security_group.web_sg.id ]  
+  user_data          = file("user-data.sh")
+  tags = {
+    name = "ec2_instance_3"
+  }
+}
+
 
