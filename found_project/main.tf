@@ -1,3 +1,4 @@
+# Using default VPC 
 # Terraform required provider block
 terraform {
   required_providers {
