@@ -178,65 +178,17 @@ output "load_balancer_dns_name" {
   value       = aws_lb.web_alb.dns_name
 }
 
-# Create ec2_instance01 in AZ east-1a
-resource "aws_instance" "Instance_01" {
-  ami             = "ami-0b5eea76982371e91"
-  instance_type   = "t2.micro"
-  subnet_id       = aws_subnet.subnet_east1a.id
-  security_groups = [aws_security_group.web_sg.id]
-  key_name        = "Test_KeyPair1"
-  tags = {
-    "name" = "web-instance-1"
-  }
-  user_data = <<-EOF
-    #!/bin/bash
-    yum -y update
-    yum -y install httpd
-    systemctl start httpd
-    systemctl enable httpd
-    echo '<!DOCTYPE html>' > /var/www/html/index.html
-    echo '<html lang="en">' >> /var/www/html/index.html
-    echo '<head><title>Terraform Deployment Test</title></head>'  >> /var/www/html/index.html
-    echo '<body style="background-color:rgb(109, 185, 109);">' >> /var/www/html/index.html
-    echo '<h1 style="color:rgb(100, 27, 27);">Terraform deployed web server-01.</h1>' >> /var/www/html/index.html
-    EOF
-}
-#Create ec2 instance02 in AZ east-1b
-resource "aws_instance" "Instance_02" {
-  ami             = "ami-0b5eea76982371e91"
-  instance_type   = "t2.micro"
-  subnet_id       = aws_subnet.subnet_east1b.id
-  security_groups = [aws_security_group.web_sg.id]
-  key_name        = "Test_KeyPair1"
-  tags = {
-    "name" = "web-instance-2"
-  }
-
-  user_data = <<-EOF
-    #!/bin/bash
-    yum -y update
-    yum -y install httpd
-    systemctl start httpd
-    systemctl enable httpd
-    echo '<!DOCTYPE html>' > /var/www/html/index.html
-    echo '<html lang="en">' >> /var/www/html/index.html
-    echo '<head><title>Terraform Deployment Test</title></head>'  >> /var/www/html/index.html
-    echo '<body style="background-color:rgb(109, 185, 109);">' >> /var/www/html/index.html
-    echo '<h1 style="color:rgb(100, 27, 27);">Terraform deployed web server-02.</h1>' >> /var/www/html/index.html
-    EOF
-}
-
-#Create ec2 instance03 in AZ east-1c
-resource "aws_instance" "Instance_03" {
-  ami             = "ami-0b5eea76982371e91"
-  instance_type   = "t2.micro"
-  subnet_id       = aws_subnet.subnet_east1c.id
-  key_name        = "Test_KeyPair1"
-  tags = {
-    "name" = "web-instance-3"
-  }
-  user_data = file("user-data.sh")
-}
+# #Create ec2 instance03 in AZ east-1c
+# resource "aws_instance" "Instance_03" {
+#   ami             = "ami-0b5eea76982371e91"
+#   instance_type   = "t2.micro"
+#   subnet_id       = aws_subnet.subnet_east1c.id
+#   key_name        = "Test_KeyPair1"
+#   tags = {
+#     "name" = "web-instance-3"
+#   }
+#   user_data = file("user-data.sh")
+# }
 
 # Create Auto scaling group Launch Template --- 
 resource "aws_launch_template" "asg_launch_template" {
