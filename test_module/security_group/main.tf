@@ -3,9 +3,9 @@
 resource "aws_security_group" "allow_http" {
   name        = "allow-http"
   description = "Allow HTTP inbound traffic"
-  vpc_id      = vpc-0789f0a4c66e2ed1d
+  vpc_id      = "vpc-0789f0a4c66e2ed1d"
 
-  ingrss {
+  ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
