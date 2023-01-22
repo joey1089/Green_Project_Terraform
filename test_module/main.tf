@@ -8,6 +8,5 @@ module "my_ec2" {
 
 
 module "security_group_web" {
-  source = "./security_group"
-  
+  source = "./security_group"  
 }

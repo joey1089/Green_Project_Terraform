@@ -9,3 +9,7 @@ output "InstanceType" {
 output "AMI_Id" {
   value = module.my_ec2.ami_id
 }
+
+output "web_security_grp_id" {
+  value = module.security_group_web.web_sg
+}
