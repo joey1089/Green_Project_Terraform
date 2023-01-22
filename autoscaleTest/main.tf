@@ -134,8 +134,9 @@ resource "aws_alb_target_group" "alb_targer_grp" {
 }
 #Create Application Load Balancer target group attachment
 resource "aws_lb_target_group_attachment" "attach-instance01" {
-  target_group_arn = aws_alb_target_group.alb_targer_grp.id
-  target_id        = aws_launch_template.asg_launch_template.id
+  target_group_arn = aws_alb_target_group.alb_targer_grp.arn
+  # target_id        = aws_launch_template.asg_launch_template.id
+  target_id = aws_instance.Instance_01.id
   #target_id        = aws_instance.Instance_01.arn # only for Lambda funtion, you need to switch to arn
   port = 80
 }
@@ -175,10 +176,7 @@ resource "aws_lb" "web_alb" {
     Environment = "Test_env"
   }
 }
-output "load_balancer_dns_name" {
-  description = "Get load balancer name"
-  value       = aws_lb.web_alb.dns_name
-}
+
 
 # Create ec2_instance01 in AZ east-1a
 resource "aws_instance" "Instance_01" {
@@ -229,7 +227,7 @@ data "template_file" "us_data" {
     echo '<html lang="en">' >> /var/www/html/index.html
     echo '<head><title>Terraform Deployment Test</title></head>'  >> /var/www/html/index.html
     echo '<body style="background-color:rgb(109, 185, 109);">' >> /var/www/html/index.html
-    echo '<h1 style="color:rgb(100, 27, 27);">Terraform deployed web server-03.</h1>' >> /var/www/html/index.html
+    echo '<h1 style="color:rgb(100, 27, 27);">Terraform deployed web server: </h1>' >> /var/www/html/index.html
   EOF
 }
 # Create Auto scaling group Launch Template --- not working code - remove ec2 instance code 
@@ -264,6 +262,7 @@ resource "aws_autoscaling_group" "asg_group" {
   }
 }
 
-output "alb-dns-hostname" {
-  value = aws_lb_listener.web_alb_listener.load_balancer_arn
+output "load_balancer_dns_name" {
+  description = "Get load balancer name"
+  value       = aws_lb.web_alb.dns_name
 }
