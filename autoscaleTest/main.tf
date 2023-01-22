@@ -190,31 +190,31 @@ resource "aws_instance" "Instance_01" {
   }
   user_data = file("user-data.sh")
 }
-#Create ec2 instance02 in AZ east-1b
-resource "aws_instance" "Instance_02" {
-  ami             = "ami-0b5eea76982371e91"
-  instance_type   = "t2.micro"
-  subnet_id       = aws_subnet.subnet_east1b.id
-  security_groups = [aws_security_group.web_sg.id]
-  key_name        = "Test_KeyPair"
-  tags = {
-    "name" = "web-instance-2"
-  }
+# #Create ec2 instance02 in AZ east-1b
+# resource "aws_instance" "Instance_02" {
+#   ami             = "ami-0b5eea76982371e91"
+#   instance_type   = "t2.micro"
+#   subnet_id       = aws_subnet.subnet_east1b.id
+#   security_groups = [aws_security_group.web_sg.id]
+#   key_name        = "Test_KeyPair"
+#   tags = {
+#     "name" = "web-instance-2"
+#   }
 
-  user_data = file("user-data.sh")
-}
+#   user_data = file("user-data.sh")
+# }
 
-#Create ec2 instance03 in AZ east-1c
-resource "aws_instance" "Instance_03" {
-  ami           = "ami-0b5eea76982371e91"
-  instance_type = "t2.micro"
-  subnet_id     = aws_subnet.subnet_east1c.id
-  key_name      = "Test_KeyPair"
-  tags = {
-    "name" = "web-instance-3"
-  }
-  user_data = file("user-data.sh")
-}
+# #Create ec2 instance03 in AZ east-1c
+# resource "aws_instance" "Instance_03" {
+#   ami           = "ami-0b5eea76982371e91"
+#   instance_type = "t2.micro"
+#   subnet_id     = aws_subnet.subnet_east1c.id
+#   key_name      = "Test_KeyPair"
+#   tags = {
+#     "name" = "web-instance-3"
+#   }
+#   user_data = file("user-data.sh")
+# }
 
 data "template_file" "us_data" {
   template = <<EOF
