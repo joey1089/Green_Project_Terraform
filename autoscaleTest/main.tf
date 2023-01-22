@@ -134,21 +134,23 @@ resource "aws_alb_target_group" "alb_targer_grp" {
 }
 #Create Application Load Balancer target group attachment
 resource "aws_lb_target_group_attachment" "attach-instance01" {
-  target_group_arn = aws_alb_target_group.alb_targer_grp.arn
-  target_id        = aws_instance.Instance_01.id
+  target_group_arn = aws_alb_target_group.alb_targer_grp.id
+  target_id        = aws_launch_template.asg_launch_template.id
   #target_id        = aws_instance.Instance_01.arn # only for Lambda funtion, you need to switch to arn
   port = 80
 }
-resource "aws_lb_target_group_attachment" "attach-instance02" {
-  target_group_arn = aws_alb_target_group.alb_targer_grp.arn
-  target_id        = aws_instance.Instance_02.id
-  port             = 80
-}
-resource "aws_lb_target_group_attachment" "attach-instance03" {
-  target_group_arn = aws_alb_target_group.alb_targer_grp.arn
-  target_id        = aws_instance.Instance_03.id
-  port             = 80
-}
+# # To remove ec2 instance nedd to remove this too - & changes effecting because of ASG
+# resource "aws_lb_target_group_attachment" "attach-instance02" {
+#   target_group_arn = aws_alb_target_group.alb_targer_grp.arn
+#   target_id        = aws_instance.Instance_02.id
+#   port             = 80
+# }
+# # To remove ec2 instance nedd to remove this too
+# resource "aws_lb_target_group_attachment" "attach-instance03" {
+#   target_group_arn = aws_alb_target_group.alb_targer_grp.arn
+#   target_id        = aws_instance.Instance_03.id
+#   port             = 80
+# }
 
 # Create Application load balancer lister
 resource "aws_lb_listener" "web_alb_listener" {
@@ -168,9 +170,9 @@ resource "aws_lb" "web_alb" {
   load_balancer_type         = "application"
   security_groups            = [aws_security_group.web_sg.id]
   subnets                    = [aws_subnet.subnet_east1a.id, aws_subnet.subnet_east1b.id, aws_subnet.subnet_east1c.id]
-  enable_deletion_protection = true
+  enable_deletion_protection = false
   tags = {
-    Environment = "Test"
+    Environment = "Test_env"
   }
 }
 output "load_balancer_dns_name" {
@@ -178,28 +180,69 @@ output "load_balancer_dns_name" {
   value       = aws_lb.web_alb.dns_name
 }
 
-# #Create ec2 instance03 in AZ east-1c
-# resource "aws_instance" "Instance_03" {
-#   ami             = "ami-0b5eea76982371e91"
-#   instance_type   = "t2.micro"
-#   subnet_id       = aws_subnet.subnet_east1c.id
-#   key_name        = "Test_KeyPair1"
-#   tags = {
-#     "name" = "web-instance-3"
-#   }
-#   user_data = file("user-data.sh")
-# }
-
-# Create Auto scaling group Launch Template --- 
-resource "aws_launch_template" "asg_launch_template" {
-  name_prefix     = "ec2-instance-"
-  image_id        = "ami-0b5eea76982371e91"
+# Create ec2_instance01 in AZ east-1a
+resource "aws_instance" "Instance_01" {
+  ami             = "ami-0b5eea76982371e91"
   instance_type   = "t2.micro"
-#   subnet_id       = [aws_subnet.subnet_east1c.id,aws_subnet.subnet_east1c.id,aws_subnet.subnet_east1c.id]
-#   security_groups = [aws_security_group.web_sg.id]
-  key_name        = "Test_KeyPair1"
+  subnet_id       = aws_subnet.subnet_east1a.id
+  security_groups = [aws_security_group.web_sg.id]
+  key_name        = "Test_KeyPair"
   tags = {
-    "name" = "web-instance-"
+    "name" = "web-instance-1"
+  }
+  user_data = file("user-data.sh")
+}
+#Create ec2 instance02 in AZ east-1b
+resource "aws_instance" "Instance_02" {
+  ami             = "ami-0b5eea76982371e91"
+  instance_type   = "t2.micro"
+  subnet_id       = aws_subnet.subnet_east1b.id
+  security_groups = [aws_security_group.web_sg.id]
+  key_name        = "Test_KeyPair"
+  tags = {
+    "name" = "web-instance-2"
+  }
+
+  user_data = file("user-data.sh")
+}
+
+#Create ec2 instance03 in AZ east-1c
+resource "aws_instance" "Instance_03" {
+  ami           = "ami-0b5eea76982371e91"
+  instance_type = "t2.micro"
+  subnet_id     = aws_subnet.subnet_east1c.id
+  key_name      = "Test_KeyPair"
+  tags = {
+    "name" = "web-instance-3"
+  }
+  user_data = file("user-data.sh")
+}
+
+data "template_file" "us_data" {
+  template = <<EOF
+    #!/bin/bash
+    yum -y update
+    yum -y install httpd
+    systemctl start httpd
+    systemctl enable httpd
+    echo '<!DOCTYPE html>' > /var/www/html/index.html
+    echo '<html lang="en">' >> /var/www/html/index.html
+    echo '<head><title>Terraform Deployment Test</title></head>'  >> /var/www/html/index.html
+    echo '<body style="background-color:rgb(109, 185, 109);">' >> /var/www/html/index.html
+    echo '<h1 style="color:rgb(100, 27, 27);">Terraform deployed web server-03.</h1>' >> /var/www/html/index.html
+  EOF
+}
+# Create Auto scaling group Launch Template --- not working code - remove ec2 instance code 
+resource "aws_launch_template" "asg_launch_template" {
+  name_prefix   = "ec2-instance-"
+  image_id      = "ami-0b5eea76982371e91"
+  instance_type = "t2.micro"
+  #   subnet_id       = [aws_subnet.subnet_east1c.id,aws_subnet.subnet_east1c.id,aws_subnet.subnet_east1c.id]
+  #   security_groups = [aws_security_group.web_sg.id]
+  #   key_name  = "Test_KeyPair" 
+  user_data = base64encode(data.template_file.us_data.rendered) # this user-data is working fine
+  tags = {
+    "name" = "asg-launch-temlate"
   }
 }
 
@@ -219,4 +262,8 @@ resource "aws_autoscaling_group" "asg_group" {
     id      = aws_launch_template.asg_launch_template.id
     version = "$Latest"
   }
+}
+
+output "alb-dns-hostname" {
+  value = aws_lb_listener.web_alb_listener.load_balancer_arn
 }
